@@ -80,7 +80,7 @@ class LoadWrfout:
                 # 原始总降雨
                 data_cumulative = data_rainc + data_rainnc + data_rainsh
                 # 差分得出瞬时降雨
-                data_instant = data_cumulative[1:] - data_cumulative[:-1]
+                data_instant = np.diff(data_cumulative, axis=0)
 
                 # 在前面加上 0 时刻的累积值，保持长度一致, (最开始时间是 wrf 预热结果，反正都要舍弃的)
                 data = np.concatenate(([data_cumulative[0]], data_instant), axis=0)
