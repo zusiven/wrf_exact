@@ -96,6 +96,7 @@ class LoadWrfout:
             logger.debug(f"{nt = }, {nx = }, {ny = }")
             data_flat = data.reshape(nt, -1)
 
+            # 历史版本
             dfs = []
             for i in range(nt):
                 df_sub = pl.DataFrame(
@@ -109,6 +110,18 @@ class LoadWrfout:
                 dfs.append(df_sub)
             
             df = pl.concat(dfs)
+
+            # 向量化版本
+            # nt, ny, nx = data.shape
+            # total_points = ny * nx
+
+            # df = pl.DataFrame({
+            #     "time": np.repeat(self.all_times, total_points),  # 向量化重复
+            #     "lon": np.tile(self.lons_flat, nt),               # 向量化平铺
+            #     "lat": np.tile(self.lats_flat, nt),               # 向量化平铺
+            #     varname: data_flat.flatten(),                     # 直接展平
+            # })
+
             round_cols = [varname, "lon", "lat"]
 
             df = df.with_columns(
@@ -179,15 +192,16 @@ class LoadWrfout:
                     (pl.col("lat").is_between(lat_min, lat_max))
                 )
 
-                _df_lons = _df_fix["lon"]
-                _df_lats = _df_fix["lat"]
-                _df_points = np.column_stack((_df_lons, _df_lats))
-                tree2 = KDTree(_df_points)
+                # _df_lons = _df_fix["lon"]
+                # _df_lats = _df_fix["lat"]
+                # _df_points = np.column_stack((_df_lons, _df_lats))
+                # tree2 = KDTree(_df_points)
 
-                distance2, index2 = tree2.query([target_lon, target_lat])
+                # distance2, index2 = tree2.query([target_lon, target_lat])
+                distance2, index2 = tree.query([target_lon, target_lat])
 
-                lon_nearest = _df_lons[int(index2)]
-                lat_nearest = _df_lats[int(index2)]
+                lon_nearest = _lons[int(index2)]
+                lat_nearest = _lats[int(index2)]
 
                 _df_nearest = df.filter(
                     (pl.col("lon") == lon_nearest) 
